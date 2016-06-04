@@ -17,7 +17,7 @@ import javax.servlet.http.HttpServletResponse;
  * Servlet implementation class Login
  */
 @WebServlet(description = "Login Servlet", 
-			urlPatterns = {"/login"}, 
+			urlPatterns = {"/loginServlet"}, 
 			initParams = {
 					@WebInitParam(name = "appUser", value = "app_user"), 
 					@WebInitParam(name = "appPass", value = "app_pass")

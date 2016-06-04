@@ -58,7 +58,7 @@
 	<br />
 	
 	<a href="checkoutPage.jsp">Checkout Page</a>
-	<form action="logout" method="post">
+	<form action="logoutServlet" method="post">
 		
 		<input type="submit" value="Logout" />
 	</form>

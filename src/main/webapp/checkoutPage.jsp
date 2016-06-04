@@ -45,7 +45,7 @@
 	<h2>Hello <%=strUsername %>, do the checkout</h2>
 	<br />
 	
-	<form action="<%=response.encodeURL("logout") %>" method="post">
+	<form action="<%=response.encodeURL("logoutServlet") %>" method="post">
 		
 		<input type="submit" value="Logout" />
 	</form>
