@@ -5,7 +5,6 @@ import java.io.IOException;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -14,21 +13,22 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.log4j.Logger;
+
 /**
  * Servlet Filter implementation class AuthenticationFilter
  */
 @WebFilter("/authenticationFilter")
 public class AuthenticationFilter implements Filter {
 
-	private ServletContext context;
+	private Logger log = Logger.getLogger(this.getClass());
 	
-    /**
-     * Default constructor. 
-     */
-    public AuthenticationFilter() {
-
-    }
-
+	@Override
+	public void init(FilterConfig fCfg) throws ServletException {
+		
+		this.log.info("AuthenticationFilter initialized");
+	}
+	
 	/**
 	 * @see Filter#doFilter(ServletRequest, ServletResponse, FilterChain)
 	 */
@@ -36,9 +36,9 @@ public class AuthenticationFilter implements Filter {
 
 		HttpServletRequest req = (HttpServletRequest) request;
 		HttpServletResponse res = (HttpServletResponse) response;
-		
 		String strUri = req.getRequestURI();
-		this.context.log("Requested resource :: " + strUri);
+
+		this.log.info("Requested resource :: " + strUri);
 		
 		// se la sessione e null, non sono authenticato
 		// quando faccio il login, viene creata la sessione
@@ -48,9 +48,10 @@ public class AuthenticationFilter implements Filter {
 		// sono la pagina di login ed loginServlet
 		HttpSession session= req.getSession(false);
 		if(null == session 
-		    && !(strUri.endsWith("html") || strUri.endsWith("loginServlet"))){
+		    && !(strUri.endsWith("html") || strUri.endsWith("login") 
+		    	 || strUri.endsWith("register"))){
 			
-			this.context.log("Unauthorized access request");
+			this.log.error("Unauthorized access request");
 			res.sendRedirect("login.html");
 		}
 		else{
@@ -61,18 +62,9 @@ public class AuthenticationFilter implements Filter {
 	}
 
 	/**
-	 * @see Filter#init(FilterConfig)
-	 */
-	public void init(FilterConfig fConfig) throws ServletException {
-
-		this.context = fConfig.getServletContext();
-		this.context.log(this.getClass().getName() + " initialized");
-	}
-
-	/**
 	 * @see Filter#destroy()
 	 */
 	public void destroy() {
-		// TODO Auto-generated method stub
+
 	}
 }

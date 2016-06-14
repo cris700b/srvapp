@@ -1,57 +1,49 @@
 package it.app.servlet;
 
+
+
+import it.app.model.UserModel;
 import it.app.servlet.utils.ServletUtils;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
-import javax.servlet.annotation.WebInitParam;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.log4j.Logger;
 
 /**
  * Servlet implementation class Login
  */
 @WebServlet(description = "Login Servlet", 
-			urlPatterns = {"/loginServlet"}, 
-			initParams = {
-					@WebInitParam(name = "appUser", value = "app_user"), 
-					@WebInitParam(name = "appPass", value = "app_pass")
-			})
+			urlPatterns = {"/login"}) 
 public class LoginServlet extends HttpServlet {
+
 	private static final long serialVersionUID = 1L;
 
-	private final String strUserId = "admin";
-	private final String strPass = "pass";
+	private Logger log = Logger.getLogger(this.getClass());
 	private ServletUtils utils;
-    /**
+    
+	/**
      * Default constructor. 
      */
     public LoginServlet() {
-        // TODO Auto-generated constructor stub
     }
 
     @Override
     public void init() throws ServletException {
    
     	utils = new ServletUtils();
-    	
-//    	// we can create DBconnection resource here 
-//    	// and set it to Servlet Context
-//    	if(getServletContext().getInitParameter("dbURL").equals("jdbc:mysql://localhost/mysqlDB")
-//    		&& getServletContext().getInitParameter("dbUser").equals("mysqlUser")
-//    		&& getServletContext().getInitParameter("dbUserPass").equals("mysqlPass")){
-//    		
-//    		getServletContext().setAttribute("DB_Success", "true");
-//    	}
-//    	else{
-//    		
-//    		throw new ServletException("DB Connection error");
-//    	}
     }
     
 	/**
@@ -66,52 +58,85 @@ public class LoginServlet extends HttpServlet {
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	
+		String strErrMsg = "";
+		PreparedStatement pst = null;
+		ResultSet rs = null;
 		
-		// get request params for userId an password
-		String strFldUser= request.getParameter("fldUser");
-		String strFldPass = request.getParameter("fldPass");
+		try {
 		
-		// get servlet config init params
-//		String strUserId = getServletConfig().getInitParameter("appUser");
-//		String strPass = getServletConfig().getInitParameter("appPass");
-		
-		// logging example
-		log("user = " + strFldUser + " :: pass = " + strFldPass);
-		
-		if(strUserId.equals(strFldUser) && strPass.equals(strFldPass)){
+			// get request params for userId an password
+			String strFldEmail= request.getParameter("fldEmail");
+			String strFldPass = request.getParameter("fldPass");
 			
-			// creating the user's http session
-			utils.createHttpSession(request, "user", strUserId, 30);
+			if(null == strFldEmail || strFldEmail.trim().length() == 0){
+				
+				strErrMsg = "User Email ";
+			}
+			else if(null == strFldPass || strFldPass.trim().length() == 0){
+				
+				strErrMsg = "Password ";
+			}
 			
-			// creating the user session cookie
-			utils.setLoginCookie(response, "user", strFldUser, 30);
-			
-			// get the encoded url string
-			String strEncodedUrl = response.encodeRedirectURL("loginSuccess.jsp");
-			response.sendRedirect(strEncodedUrl);
-		}
-		else{
-			
-			this.handleLoginError(request, response);
-		}
-	}
+			PrintWriter out = response.getWriter();
+			if(strErrMsg.length() > 0){
+				
+				strErrMsg += "can't be null or empty";
 
-	/**
-	 * handles the login error
-	 * 
-	 * @param request
-	 * @param response
-	 * @throws ServletException
-	 * @throws IOException
-	 */
-	private void handleLoginError(HttpServletRequest request, 
-								  HttpServletResponse response) 
-							throws ServletException, IOException{
-		
-		PrintWriter out = response.getWriter();
-		out.println("<font color=red>User name or password incorrect</font>");
+				this.utils.addPrintMessage(out, strErrMsg, true);
+				
+				RequestDispatcher dispatcher = getServletContext().getRequestDispatcher("login.html");
+				dispatcher.include(request, response);
+			}
+			else{
+				
+				Connection con = (Connection) getServletContext().getAttribute("DbConnection");
+				pst = con.prepareStatement("select id, name, email, country from users"
+															  + " where email = ?"
+															  + " and password = ?"
+															  + " limit 1");
+				pst.setString(1, strFldEmail);
+				pst.setString(2, strFldPass);
+				rs = pst.executeQuery();
+				if(null != rs && rs.next()){
+					
+					UserModel userModel = new UserModel(rs.getInt("id"), rs.getString("name"), rs.getString("email"), rs.getString("country"));
 
-		RequestDispatcher reqDispatcher = getServletContext().getRequestDispatcher("/login.html");
-		reqDispatcher.include(request, response);
+					this.log.info("User found with details : " + userModel);
+					
+					// for creating the session i could have used the utils.createSession() method
+					HttpSession session = request.getSession();
+					session.setAttribute("user", userModel);
+					response.sendRedirect(response.encodeRedirectURL("home.jsp"));
+				}
+				else{
+					
+					this.log.error("No User not found with email : " + strFldEmail);
+					this.utils.addPrintMessage(out, "No user found with the given email", true);
+					RequestDispatcher dispatcher = getServletContext().getRequestDispatcher("/login.html");
+					dispatcher.include(request, response);
+				}
+			}
+		} 
+		catch (SQLException e) {
+
+			e.printStackTrace();
+			
+			String strTmpMsg = "Database connection problem";
+			this.log.error(strTmpMsg);
+			throw new ServletException(strErrMsg);
+		}
+		finally{
+			
+			try {
+				
+				rs.close();
+				pst.close();
+			} 
+			catch (SQLException e) {
+
+				this.log.error("SQLException in closing PreparedStatement or ResultSet");
+			}
+		}
 	}
 }

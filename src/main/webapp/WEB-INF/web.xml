@@ -6,41 +6,32 @@
   </welcome-file-list>
   <context-param>
     <param-name>DB_USER</param-name>
-    <param-value>dbUser</param-value>
+    <param-value>root</param-value>
   </context-param>
   <context-param>
     <param-name>DB_PASS</param-name>
-    <param-value>dbPass</param-value>
+    <param-value>jdbc</param-value>
   </context-param>
   <context-param>
     <param-name>DB_URL</param-name>
-    <param-value>jdbc:mysql://localhost/mysql_db</param-value>
+    <param-value>jdbc:mysql://localhost:3306/srvapp_db</param-value>
   </context-param>
-  <listener>
-    <listener-class>it.app.listener.AppContextListener</listener-class>
-  </listener>
-  <listener>
-    <listener-class>it.app.listener.AppContextAttributeListener</listener-class>
-  </listener>
-  <listener>
-    <listener-class>it.app.listener.MySessionListener</listener-class>
-  </listener>
-  <listener>
-    <listener-class>it.app.listener.MyServletRequestListener</listener-class>
-  </listener>
-  <filter>
-    <filter-name>RequestLoggingFilter</filter-name>
-    <filter-class>it.app.filter.RequestLoggingFilter</filter-class>
-  </filter>
+  <context-param>
+    <param-name>log4j-config</param-name>
+    <param-value>WEB-INF/log4j.xml</param-value>
+  </context-param>
+  <error-page>
+    <error-code>404</error-code>
+    <location>/appErrorHandler</location>
+  </error-page>
+  <error-page>
+    <exception-type>java.lang.Throwable</exception-type>
+    <location>/appErrorHandler</location>
+  </error-page>
   <filter>
     <filter-name>AuthenticationFilter</filter-name>
     <filter-class>it.app.filter.AuthenticationFilter</filter-class>
   </filter>
-  <filter-mapping>
-    <filter-name>RequestLoggingFilter</filter-name>
-    <url-pattern>/*</url-pattern>
-    <dispatcher>REQUEST</dispatcher>
-  </filter-mapping>
   <filter-mapping>
     <filter-name>AuthenticationFilter</filter-name>
     <url-pattern>/*</url-pattern>

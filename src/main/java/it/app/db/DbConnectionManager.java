@@ -1,6 +1,8 @@
 package it.app.db;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
 /**
  * 
@@ -9,9 +11,6 @@ import java.sql.Connection;
  */
 public class DbConnectionManager {
 
-	private String strDbUrl;
-	private String strUser;
-	private String strPass;
 	private Connection con;
 	
 	/**
@@ -19,14 +18,14 @@ public class DbConnectionManager {
 	 * @param strDbUrl
 	 * @param strUser
 	 * @param strPass
+	 * @throws ClassNotFoundException 
+	 * @throws SQLException 
 	 */
-	public	DbConnectionManager(String strDbUrl, String strUser, String strPass) {
-		
-		this.strDbUrl = strDbUrl;
-		this.strUser = strUser;
-		this.strPass= strPass;
+	public	DbConnectionManager(String strDbUrl, String strUser, String strPass) throws ClassNotFoundException, SQLException {
 		
 		// create db connection here
+		Class.forName("com.mysql.jdbc.Driver");
+		this.con = DriverManager.getConnection(strDbUrl, strUser, strPass);
 	}
 	
 	/**
@@ -39,10 +38,15 @@ public class DbConnectionManager {
 	}
 	
 	/**
+	 * @throws SQLException 
 	 * 
 	 */
-	public void closeConnection() {
+	public void closeConnection() throws SQLException {
 		
 		// close db connection here
+		if(null != this.con && !this.con.isClosed()){
+			
+			this.con.close();
+		}
 	}
 }

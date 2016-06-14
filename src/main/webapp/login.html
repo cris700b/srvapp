@@ -8,12 +8,13 @@
 </head>
 <body>
 
-	<form action="loginServlet" method="post">
+	<h3>Login with email and password</h3>
+	<form action="login" method="post">
 		
-		<label for="fldUser">
-			Username
+		<label for="fldEmail">
+			Email :
 		</label>
-		<input type="text" name="fldUser">
+		<input type="text" name="fldEmail">
 		<br />
 		
 		<label for="fldPass">
@@ -25,5 +26,8 @@
 		<input type="submit" value="Login">
 	</form>
 
+	<br />
+	If you are a new user, please 
+	<a href="register.html">register</a>.
 </body>
 </html>

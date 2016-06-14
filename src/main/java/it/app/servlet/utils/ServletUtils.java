@@ -1,5 +1,7 @@
 package it.app.servlet.utils;
 
+import java.io.PrintWriter;
+
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -38,15 +40,52 @@ public class ServletUtils {
 	 */
 	public void createHttpSession(HttpServletRequest request, 
 								  String strAttributeName,
-								  String strAttributeValue, 
+								  Object objAttributeValue, 
 								  int intSessionAge) {
 
 		HttpSession session = request.getSession();
-		session.setAttribute(strAttributeName, strAttributeValue);
+		session.setAttribute(strAttributeName, objAttributeValue);
 		
 		// setting the session expiration time
 		session.setMaxInactiveInterval(intSessionAge * 60);
 	}
 	
+	/**
+	 * utility method for printing messages to the response page
+	 * 
+	 * @param out
+	 * @param strMsg
+	 * @param isError
+	 */
+	public void addPrintMessage(PrintWriter out, String strMsg, boolean isError){
+		
+		if(isError){
+
+			out.print("<font color=red>");
+		}
+		else{
+			
+			out.print("<font color=green>");
+		}
+
+		out.print(strMsg);
+		out.print("</font>");
+	}
 	
+	/**
+	 * checks if the passed string valiue is null or with length 0
+	 * 
+	 * @param strValue
+	 * @return
+	 */
+	public boolean checkIsEmpty(String strValue) {
+		
+		boolean isEmpty = false;
+		if(null == strValue || strValue.trim().length() == 0){
+			
+			isEmpty = true;
+		}
+		
+		return isEmpty;
+	}
 }

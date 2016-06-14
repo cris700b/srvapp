@@ -1,13 +1,18 @@
 package it.app.listener;
 
-import java.util.logging.Logger;
-
 import it.app.db.DbConnectionManager;
+
+import java.io.File;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
+
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.xml.DOMConfigurator;
 
 /**
  * Application Lifecycle Listener implementation class AppContextListener
@@ -15,33 +20,63 @@ import javax.servlet.annotation.WebListener;
  */
 @WebListener
 public class AppContextListener implements ServletContextListener {
-
-	private Logger log = Logger.getLogger(this.getClass().getName());
 	
-    /**
-     * Default constructor. 
-     */
-    public AppContextListener() {
-
-    }
-
     /**
      * @see ServletContextListener#contextInitialized(ServletContextEvent)
      */
     public void contextInitialized(ServletContextEvent servletContextEvent)  { 
 
     	ServletContext ctx = servletContextEvent.getServletContext();
-    	
+
+    	// initialize the db connection
     	String strDbUrl = ctx.getInitParameter("DB_URL");
     	String strUser = ctx.getInitParameter("DB_USER");
     	String strPass = ctx.getInitParameter("DB_PASS");
     	
     	// create db connection from init params 
     	// and set it to context
-    	DbConnectionManager dbManager = new DbConnectionManager(strDbUrl, strUser, strPass);
-    	ctx.setAttribute("DbManager", dbManager);
-    	
-    	this.log.info("Database connection initialized for Application."); 	
+    	try {
+		
+    		DbConnectionManager dbConnectionManager = new DbConnectionManager(strDbUrl, strUser, strPass);
+			ctx.setAttribute("DbConnection", dbConnectionManager.getConnection());
+			
+			System.out.println("Database connection initialized successfully.");
+			
+			// initialize log4j
+			String log4jConfig = ctx.getInitParameter("log4j-config");
+			if(null != log4jConfig){
+
+				String strWebAppPath = ctx.getRealPath("/");
+				String strLog4jProp = strWebAppPath + log4jConfig;
+				File log4jCgfFile = new File(strLog4jProp);
+				if(log4jCgfFile.exists()){
+					
+					System.out.println("Initializing log4j with : " + strLog4jProp);
+					DOMConfigurator.configure(strLog4jProp);
+				}
+				else {
+					
+					System.err.println(strLog4jProp + "file not found"
+										+ ", initializing log4j with BasicConfigurator");
+				}
+			}
+			else{
+				
+				System.err.println("No log4j-config init param, "
+									+ "initializing log4j with BasicConfigurator");
+				BasicConfigurator.configure();
+			}
+			
+			System.out.println("log4j configured properly");
+		} 
+    	catch (ClassNotFoundException e) {
+
+    		e.printStackTrace();
+		} 
+    	catch (SQLException e) {
+
+    		e.printStackTrace();
+		} 	
     }
 
 	/**
@@ -49,11 +84,19 @@ public class AppContextListener implements ServletContextListener {
      */
     public void contextDestroyed(ServletContextEvent servletContextEvent)  { 
 
-    	ServletContext ctx = servletContextEvent.getServletContext();
-    	DbConnectionManager dbManager = (DbConnectionManager) ctx.getAttribute("DbManager");
-    	dbManager.closeConnection();
+    	try {
+		
+    		ServletContext ctx = servletContextEvent.getServletContext();
+			Connection connection = (Connection) ctx.getAttribute("DbConnection");
+			connection.close();
+			System.out.println("Database connection closed for srvApp");
+		} 
+    	catch (SQLException e) {
+
+    		e.printStackTrace();
+		}
     	
-    	this.log.info("Database connection closed for Application");
+    	
     }
 
 	
